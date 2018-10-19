@@ -239,6 +239,11 @@ int main(int argc, char **argv)
     noecho();
     curs_set(0);
     getmaxyx(stdscr,row,col);
+    if (col < 80) {
+        endwin();
+        printf("%s", "Your screen is too small! Try making it bigger and trying again.");
+        exit(1);
+    }
 	init_pair(1, COLOR_RED, -1);
 	init_pair(2, COLOR_GREEN, -1);
 	init_pair(3, COLOR_BLUE, -1);
