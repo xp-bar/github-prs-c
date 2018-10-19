@@ -1,7 +1,7 @@
-Github PRs
-c ncurses terminal program to display your current PRs in your terminal.
+# Github PRs
+### c ncurses terminal program to display your current PRs in your terminal.
 
-To install:<br>
+###### To install:
 create a github api token here: https://github.com/settings/tokens/new<br>
 then run the install command below:<br>
 <br>
