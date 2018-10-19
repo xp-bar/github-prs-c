@@ -7,7 +7,7 @@ then run the install command below:
 
 <sub>
 which clones repo, cd into dir, `install.sh` (makes a symlink to your `/usr/local/bin` dir so you can run it anywhere))
-<sub>
+</sub>
 ```
 ogdir=$PWD; git clone https://github.com/xp-bar/github-prs-c ~/github-prs-c; cd ~/github-prs-c; ./install.sh; cd $ogdir
 ```
