@@ -6,7 +6,7 @@ create a github api token here: https://github.com/settings/tokens/new
 then run the install command below:
 
 <sub>
-which clones repo, cd into dir, `install.sh` (makes a symlink to your `/usr/local/bin` dir so you can run it anywhere))
+stores pwd; clones repo, cd into dir, `install.sh` (makes a symlink to your `/usr/local/bin` dir so you can run it anywhere), and cd back to original dir)
 </sub>
 
 ```
