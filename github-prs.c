@@ -77,7 +77,6 @@ void queryApi(char * command, int row, int col) {
 }
 
 void drawBorder(int row, int col) {
-    const int padding = 1;
     for (int column = 0; column < col; column++) {
             mvprintw(0, column,"%s", "=");
             mvprintw(row-1, column,"%s", "=");
@@ -88,79 +87,103 @@ void drawBorder(int row, int col) {
     }
 }
 
+int printHelp() {
+    printf("%s", "GITHUB PRS\n");
+    printf("%s", "-------------------------\n");
+    printf("%s", "Add the following to your env / .bashrc / .zshrc:\n");
+    printf("%s", "export GITHUB_USERNAME=<your github username, ex \"xp-bar\">\n");
+    printf("%s", "export GITHUB_REPO=<the github repo, including owner you want to use; ex. \"xp-bar/repo\">\n");
+    printf("%s", "export GITHUB_TOKEN=<your github token, make one here: https://github.com/settings/tokens/new>\n");
+    printf("%s", "-------------------------\n");
+    printf("%s", "Also, ensure your git config user.email is set to one associated with your token: git config user.name \"your.email@yourdomain.ca\"\n");
+    printf("%s", "-------------------------\n");
+    printf("%s", "Then, finally, you can run with: ./prs assigned, ./prs -a; ./prs created, ./prs -c\n");
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
-    if (argc != 2 || strncmp(argv[1], "--help", 7) == 0) {
-        printf("%s", "GITHUB PRS\n");
-        printf("%s", "-------------------------\n");
-        printf("%s", "Add the following to your env / .bashrc / .zshrc:\n");
-        printf("%s", "export GITHUB_USERNAME=<your github username, ex \"xp-bar\">\n");
-        printf("%s", "export GITHUB_REPO=<the github repo, including owner you want to use; ex. \"xp-bar/repo\">\n");
-        printf("%s", "export GITHUB_TOKEN=<your github token, make one here: https://github.com/settings/tokens/new>\n");
-        printf("%s", "-------------------------\n");
-        printf("%s", "Also, ensure your git config user.email is set to one associated with your token: git config user.name \"your.email@yourdomain.ca\"\n");
-        printf("%s", "-------------------------\n");
-        printf("%s", "Then, finally, you can run with: ./prs assigned, ./prs -a; ./prs created, ./prs -c\n");
-        return 1;
+    /* ENv VARIABLES */
+    if (argc == 1 || strncmp(argv[1], "--help", 7) == 0) {
+        return printHelp();
     }
 
     int row,col;
     const int MAX_SIZE = 1024;
-    char buff[MAX_SIZE];
     const int padding = 4;
     
-    /* ENv VARIABLES */
     const char* baseurl="https://api.github.com/repos/";
+    char * repo = getenv("GITHUB_REPO");
+    char* user = getenv("GITHUB_USERNAME");
+    char* token = getenv("GITHUB_TOKEN");
+    char * emailstr = NULL;
 
-    const char* user = getenv("GITHUB_USERNAME");
+    char * whichType = "";
+    char * whichTypeString = "";
+
+    if (argc > 1) {
+        for(int i=1; i < argc; i++) {
+            char * id = *(argv+i);
+            char * next = *(argv+i+1);
+
+            // USERNAME
+            if (strcmp(id, "-u") && next != NULL) {
+                user = next;
+            }
+
+            // REPO
+            if (strcmp(id, "-r") && next != NULL) {
+                repo = next;
+            }
+
+            // TOKEN
+            if (strcmp(id, "-t") && next != NULL) {
+                token = next;
+            }
+
+            // EMAIL
+            if (strcmp(id, "-e") && next != NULL) {
+                emailstr = next;
+            }
+
+            if (strcmp(id, "-c") || strcmp(id, "--created")) {
+                whichType = "creator";
+                whichTypeString = "CREATED BY";
+            }
+
+            if (strcmp(id, "-a") || strcmp(id, "--assigned")) {
+                whichType = "creator";
+                whichTypeString = "CREATED BY";
+            }
+        }
+    }
+
+    if (emailstr == NULL) {
+        char estr[256];
+        char buff[1024];
+        FILE* email = popen("git config user.email", "r");
+        while (fgets(buff, MAX_SIZE, email) != NULL) {
+            buff[strcspn(buff, "\n")] = 0;
+            snprintf(estr, sizeof estr, "%s", buff);
+        }
+        emailstr = estr;
+    }
+
+    if (repo == NULL) {
+        printf("%s", "Make sure you either pass a repo (-r owner/repo) or set your GITHUB_REPO env variable: GITHUB_REPO=\"owner/myrepo\"");
+        return 1;
+    }
+
     if (user == NULL) {
         printf("%s", "Make sure you set your GITHUB_USERNAME env variable: GITHUB_USERNAME=xp-bar");
         return 1;
     }
 
-    const char* repo = getenv("GITHUB_REPO");
-    if (repo == NULL) {
-        printf("%s", "Make sure you set your GITHUB_REPO env variable: GITHUB_REPO=myrepo");
-        return 1;
-    }
-
-    const char* token = getenv("GITHUB_TOKEN");
     if (token == NULL) {
         printf("%s", "Make sure you set your GITHUB_TOKEN env variable with your github api personal token: GITHUB_TOKEN=\"<token>\"");
         return 1;
     }
 
-    FILE* email = popen("git config user.email", "r");
-
-    if (
-            strncmp(argv[1], "created", 10) != 0 &&
-            strncmp(argv[1], "assigned", 10) != 0 &&
-            strncmp(argv[1], "-c", 4) != 0 &&
-            strncmp(argv[1], "-a", 4) != 0
-    ) {
-        printf("%s", "You must pass either \"assigned\" (-a) or \"created\" (-c) to get your pull requests!");
-        return 1;
-    }
-
-    char * whichType;
-    char * whichTypeString;
-
-    if (strncmp(argv[1], "created", 10) == 0 || strncmp(argv[1], "-c", 4) == 0) {
-        whichType = "creator";
-        whichTypeString = "CREATED BY";
-    }
-    
-    if (strncmp(argv[1], "assigned", 10) == 0 || strncmp(argv[1], "-a", 4) == 0) {
-        whichType = "assignee";
-        whichTypeString = "ASSIGNED TO";
-    }
-    
-    char emailstr[256];
-
-    while (fgets(buff, MAX_SIZE, email) != NULL) {
-        buff[strcspn(buff, "\n")] = 0;
-        snprintf(emailstr, sizeof emailstr, "%s", buff);
-    }
     char url[256];
     char login[256];
 
@@ -194,16 +217,8 @@ int main(int argc, char **argv)
         refresh();
         sleep(30);
     }
-    /* int i = 5 + padding; */
-    /* while (fgets(buf, MAX_SIZE, result) != NULL) { */
-    /*     mvprintw(i,(col-strlen(buf))/2,"%s",buf); */
-    /*     i++; */
-    /* } */
 
-    // Border
-
-    /* mvprintw(row-2,0,"This screen has %d rows and %d columns\n",row,col); */
-    /* printw("Try resizing your window(if possible) and then run this program again"); */
+    mvprintw(row-2,0,"%s", "Press ctrl+c to quit.");
 
     return 0;
 }
