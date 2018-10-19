@@ -7,8 +7,20 @@
 #include "json-c/json.h"
 #include <locale.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define ITERMAX 10000
+
+void sigint_handler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    printf("\n User provided signal handler for Ctrl+C \n");
+
+    endwin();
+    /* Do a graceful cleanup of the program like: free memory/resources/etc and exit */
+    exit(0);
+}
 
 void removeChar(char *str, char *garbage) {
 
@@ -103,6 +115,8 @@ int printHelp() {
 
 int main(int argc, char **argv)
 {
+    signal(SIGINT, sigint_handler);
+
     /* ENv VARIABLES */
     if (argc == 1 || strncmp(argv[1], "--help", 7) == 0) {
         return printHelp();
@@ -124,36 +138,59 @@ int main(int argc, char **argv)
     if (argc > 1) {
         for(int i=1; i < argc; i++) {
             char * id = *(argv+i);
-            char * next = *(argv+i+1);
+            int nextIndex = i+1;
+            char * next = *(argv+nextIndex);
 
             // USERNAME
-            if (strcmp(id, "-u") && next != NULL) {
-                user = next;
+            if (strcmp(id, "-u") == 0) {
+                if (next != NULL) {
+                    user = next;
+                } else {
+                    printf("You forgot a username after -u!");
+                    exit(1);
+                }
             }
 
             // REPO
-            if (strcmp(id, "-r") && next != NULL) {
-                repo = next;
+            if (strcmp(id, "-r") == 0) {
+                if (next != NULL) {
+                    char tmp[256];
+                    snprintf(tmp, sizeof tmp, "%s/", next);
+                    repo = tmp;
+                } else {
+                    printf("You forgot a owner/repo after -r!");
+                    exit(1);
+                }
             }
 
             // TOKEN
-            if (strcmp(id, "-t") && next != NULL) {
-                token = next;
+            if (strcmp(id, "-t") == 0 && next != NULL) {
+                if (next != NULL) {
+                    token = next;
+                } else {
+                    printf("You forgot a token after -t!");
+                    exit(1);
+                }
             }
 
             // EMAIL
-            if (strcmp(id, "-e") && next != NULL) {
-                emailstr = next;
+            if (strcmp(id, "-e") == 0 && next != NULL) {
+                if (next != NULL) {
+                    emailstr = next;
+                } else {
+                    printf("You forgot an email after -e!");
+                    exit(1);
+                }
             }
 
-            if (strcmp(id, "-c") || strcmp(id, "--created")) {
+            if (strcmp(id, "-c") == 0 || strcmp(id, "--created") == 0) {
                 whichType = "creator";
                 whichTypeString = "CREATED BY";
             }
 
-            if (strcmp(id, "-a") || strcmp(id, "--assigned")) {
-                whichType = "creator";
-                whichTypeString = "CREATED BY";
+            if (strcmp(id, "-a") == 0 || strcmp(id, "--assigned") == 0) {
+                whichType = "assignee";
+                whichTypeString = "ASSIGNED TO";
             }
         }
     }
@@ -184,6 +221,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
+
+    if (strcmp(whichType, "") == 0) {
+        whichType = "creator";
+        whichTypeString = "CREATED BY";
+    }
+
     char url[256];
     char login[256];
 
@@ -211,14 +254,15 @@ int main(int argc, char **argv)
     char command[256];
     snprintf(command, sizeof command, "%s%s%s%s", "curl -s -u ", login, " ", url);
 
-    for (;;) {
+    char chr;
+    timeout(0);
+    do {
         queryApi(command, row, col);
         drawBorder(row, col);
+        mvprintw(row-2,2,"%s", "Press ctrl+c to quit.");
         refresh();
         sleep(30);
-    }
-
-    mvprintw(row-2,0,"%s", "Press ctrl+c to quit.");
+    } while ((chr = getch()) == ERR);
 
     return 0;
 }
