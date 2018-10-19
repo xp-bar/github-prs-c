@@ -12,7 +12,7 @@ stores pwd; clones repo, cd into dir, `install.sh` (makes a symlink to your `/us
 ```
 ogdir=$PWD; git clone https://github.com/xp-bar/github-prs-c ~/github-prs-c; cd ~/github-prs-c; ./install.sh; cd $ogdir
 ```
-<br>
+
 ### To run:
 either set env vars (run `prs` to see instructions), or pass as params:
 <br>
