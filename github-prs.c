@@ -45,7 +45,7 @@ void queryApi(char * command, int row, int col) {
     
     FILE *result;
     result = popen(command, "r");
-    
+
     char * buffer = NULL;
     struct json_object *jobj;
     struct json_object *object;
@@ -53,7 +53,7 @@ void queryApi(char * command, int row, int col) {
     ssize_t bytes_read = getdelim(&buffer, &len, '\0', result);
     if (bytes_read != -1) {
         jobj = json_tokener_parse(buffer);
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 8; i++) {
             object = json_object_array_get_idx(jobj, i);
             if (object != NULL) {
                 char *title = getValue(object, "title");
@@ -116,13 +116,16 @@ int printHelp() {
 int main(int argc, char **argv)
 {
     signal(SIGINT, sigint_handler);
-
+    
     /* ENv VARIABLES */
     if (argc == 1 || strncmp(argv[1], "--help", 7) == 0) {
         return printHelp();
     }
 
     int row,col;
+    
+    bool showBorder = true;
+
     const int MAX_SIZE = 1024;
     const int padding = 4;
     
@@ -181,6 +184,11 @@ int main(int argc, char **argv)
                     printf("You forgot an email after -e!");
                     exit(1);
                 }
+            }
+
+            // BORDER
+            if (strcmp(id, "-nb") == 0) {
+                showBorder = false;
             }
 
             if (strcmp(id, "-c") == 0 || strcmp(id, "--created") == 0) {
@@ -263,7 +271,9 @@ int main(int argc, char **argv)
     timeout(0);
     do {
         queryApi(command, row, col);
-        drawBorder(row, col);
+        if (showBorder == true) {
+            drawBorder(row, col);
+        }
         mvprintw(row-2,2,"%s", "Press ctrl+c to quit.");
         refresh();
         sleep(30);
