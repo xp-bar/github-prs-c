@@ -11,15 +11,11 @@
 
 #define ITERMAX 10000
 
+static volatile int continueRunning = 1;
+
 void sigint_handler(int sig_num)
 {
-    /* Reset handler to catch SIGINT next time.
-       Refer http://en.cppreference.com/w/c/program/signal */
-    printf("\n User provided signal handler for Ctrl+C \n");
-
-    endwin();
-    /* Do a graceful cleanup of the program like: free memory/resources/etc and exit */
-    exit(0);
+    continueRunning = 0;
 }
 
 void removeChar(char *str, char *garbage) {
@@ -115,6 +111,7 @@ int printHelp() {
 
 int main(int argc, char **argv)
 {
+    signal (SIGQUIT, sigint_handler);
     signal(SIGINT, sigint_handler);
     
     /* ENv VARIABLES */
@@ -277,8 +274,9 @@ int main(int argc, char **argv)
         mvprintw(row-2,2,"%s", "Press ctrl+c to quit.");
         refresh();
         sleep(30);
-    } while ((chr = getch()) == ERR);
+    } while ((chr = getch()) == ERR && continueRunning);
 
-    return 0;
+    endwin(); 
+    exit(0);
 }
 
