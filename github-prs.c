@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 
     int row,col;
     
-    bool showBorder = true;
+    bool showBorder = false;
 
     const int MAX_SIZE = 1024;
     const int padding = 4;
@@ -187,8 +187,8 @@ int main(int argc, char **argv)
             }
 
             // BORDER
-            if (strcmp(id, "-nb") == 0) {
-                showBorder = false;
+            if (strcmp(id, "-b") == 0) {
+                showBorder = true;
             }
 
             if (strcmp(id, "-c") == 0 || strcmp(id, "--created") == 0) {
